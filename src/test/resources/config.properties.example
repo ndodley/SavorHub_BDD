@@ -1,0 +1,5 @@
+# Copy this file to config.properties (same folder) and fill in real values.
+# config.properties is gitignored, so your real credentials never get committed.
+base.url=https://localhost:44325
+test.email=your-test-user@example.com
+test.password=YourTestPassword1!

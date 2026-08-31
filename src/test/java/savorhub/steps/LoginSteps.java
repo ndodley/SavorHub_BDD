@@ -9,7 +9,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import savorhub.hooks.Hooks;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,19 +26,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * / asp-for="Input.Password" render as id="Input_Email" / id="Input_Password").
  * If SavorHub's login page changes, re-check the real DOM in DevTools rather
  * than trusting this comment.
+ *
+ * BASE_URL / VALID_EMAIL / VALID_PASSWORD come from
+ * src/test/resources/config.properties, which is gitignored so real test
+ * credentials never get committed. Copy config.properties.example to
+ * config.properties (same folder) and fill in your local values.
  */
 public class LoginSteps {
 
     private final WebDriver driver = Hooks.driver;
 
-    // TODO: confirm this matches the port dotnet run / Visual Studio prints
-    // for the "https" launch profile (Properties/launchSettings.json).
-    private static final String BASE_URL = "https://localhost:44325";
+    private static final Properties CONFIG = loadConfig();
 
-    // TODO: replace with a real account you've registered against your local
-    // SavorHub database (via the Register page) before running these tests.
-    private static final String VALID_EMAIL = "your-test-user@example.com";
-    private static final String VALID_PASSWORD = "YourTestPassword1!";
+    private static final String BASE_URL = CONFIG.getProperty("base.url");
+    private static final String VALID_EMAIL = CONFIG.getProperty("test.email");
+    private static final String VALID_PASSWORD = CONFIG.getProperty("test.password");
+
+    private static Properties loadConfig() {
+        Properties props = new Properties();
+        try (InputStream in = LoginSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
+            if (in == null) {
+                throw new IllegalStateException(
+                        "Missing src/test/resources/config.properties. Copy "
+                        + "config.properties.example to config.properties in that "
+                        + "same folder and fill in your local test account details.");
+            }
+            props.load(in);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to load config.properties", e);
+        }
+        return props;
+    }
 
     @Given("I am on the SavorHub login page")
     public void i_am_on_the_login_page() {
@@ -57,9 +79,18 @@ public class LoginSteps {
 
     @Then("I should see the account menu in the navbar")
     public void i_should_see_the_account_menu() {
+        // SavorHub's navbar doesn't contain the literal word "Account" - once
+        // logged in it shows the current user's email (as a dropdown toggle,
+        // uppercased via CSS). Rather than hardcode that markup, this checks
+        // that the logged-in test account's own email appears somewhere on
+        // the page, matched case-insensitively since the display is
+        // uppercase but the underlying text/value is normal case.
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        String emailLower = VALID_EMAIL.toLowerCase();
         boolean present = wait.until(ExpectedConditions.presenceOfElementLocated(
-                By.partialLinkText("Account"))) != null;
+                By.xpath("//*[contains(translate(., "
+                        + "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '"
+                        + emailLower + "')]"))) != null;
         assertTrue(present);
     }
 
