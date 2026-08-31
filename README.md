@@ -25,9 +25,11 @@ src/test/java/savorhub/
   hooks/    Hooks.java        Opens a fresh Chrome window before each scenario, closes it after
   runners/  TestRunner.java   JUnit 5 entry point that discovers and runs the .feature files
   steps/    LoginSteps.java   Step definitions for login.feature
+            MenuSteps.java    Step definitions for menu.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
+  features/menu.feature           The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
 ```
@@ -92,10 +94,13 @@ mvn test
 - `login.feature`
   - Successful login with valid credentials
   - Login fails with an incorrect password
+- `menu.feature`
+  - Browsing the menu shows available dishes
+  - Viewing a menu item's details
 
 ## Planned next steps
 
-- Additional feature files covering menu browsing, ordering, and account management.
+- Additional feature files covering ordering and account management.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
   parallel without sharing a single static driver.
 - Add a screenshot-on-failure hook to make failures easier to diagnose from CI or a
