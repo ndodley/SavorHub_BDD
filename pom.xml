@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.nikhil</groupId>
+  <artifactId>savorhub-bdd-tests</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <cucumber.version>7.34.7</cucumber.version>
+    <selenium.version>4.48.0</selenium.version>
+    <webdrivermanager.version>6.3.4</webdrivermanager.version>
+    <!-- Same JUnit BOM version cucumber-junit-platform-engine 7.34.7 itself
+         builds and tests against (see its own pom.xml) -->
+    <junit-bom.version>5.14.2</junit-bom.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit-bom.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- Overrides the httpclient5:5.6 that webdrivermanager 6.3.4 itself
+           declares. 5.6 is affected by CVE-2026-40542 (auth-bypass flaw in
+           AuthenticationHandler.handleResponse(), fixed in 5.6.1+). Pinning
+           here in dependencyManagement forces the patched version everywhere,
+           without adding httpclient5 as a direct project dependency. -->
+      <dependency>
+        <groupId>org.apache.httpcomponents.client5</groupId>
+        <artifactId>httpclient5</artifactId>
+        <version>5.6.4</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Selenium: drives the real browser -->
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-java</artifactId>
+      <version>${selenium.version}</version>
+    </dependency>
+
+    <!-- WebDriverManager: auto-downloads the matching ChromeDriver, no manual driver binaries.
+         docker-java is excluded below: it is only needed for WebDriverManager's optional
+         browserInDocker() feature, which this project never calls (see Hooks.java).
+         That dependency drags in docker-java-core, then bcpkix-jdk18on, then
+         bcprov-jdk18on, a chain flagged for a BouncyCastle timing-discrepancy
+         vulnerability (github.com/bonigarcia/webdrivermanager/issues/1269), plus
+         other CVEs reported on the same subtree
+         (github.com/bonigarcia/webdrivermanager/issues/896). Excluding it removes
+         that entire vulnerable subtree along with the unused Docker feature. -->
+    <dependency>
+      <groupId>io.github.bonigarcia</groupId>
+      <artifactId>webdrivermanager</artifactId>
+      <version>${webdrivermanager.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.docker-java</groupId>
+          <artifactId>docker-java</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.github.docker-java</groupId>
+          <artifactId>docker-java-transport-httpclient5</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- Cucumber: reads .feature files and wires Gherkin lines to Java step definitions -->
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-java</artifactId>
+      <version>${cucumber.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-junit-platform-engine</artifactId>
+      <version>${cucumber.version}</version>
+    </dependency>
+
+    <!-- JUnit 5 platform: the runner underneath Cucumber. Versions come from
+         the junit-bom import above, so they always match what Cucumber
+         itself was built and tested against. -->
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Explicit per JUnit's own guidance: junit-platform-suite pulls this in
+         transitively, but Surefire's JUnit Platform provider is more reliable
+         when it's declared directly. -->
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.15.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.6</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
