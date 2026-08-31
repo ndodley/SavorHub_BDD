@@ -27,11 +27,13 @@ src/test/java/savorhub/
   steps/    LoginSteps.java   Step definitions for login.feature
             MenuSteps.java    Step definitions for menu.feature
             LogoutSteps.java  Step definitions for logout.feature
+            RegisterSteps.java Step definitions for registration.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
   features/menu.feature           The Gherkin scenarios themselves
   features/logout.feature         The Gherkin scenarios themselves
+  features/registration.feature   The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
 ```
@@ -101,11 +103,15 @@ mvn test
   - Viewing a menu item's details
 - `logout.feature`
   - Logging out ends the session and returns the navbar to its logged-out state
+- `registration.feature`
+  - Registering a new account signs the user in automatically (a fresh,
+    random email is generated per test run to avoid colliding with an
+    already-registered address in the local dev database)
 
 ## Planned next steps
 
-- Additional feature files covering registration, favorites, cart/checkout,
-  order history, reviews, password reset, and account management.
+- Additional feature files covering favorites, cart/checkout, order
+  history, reviews, password reset, and account management.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
   parallel without sharing a single static driver.
 - Add a screenshot-on-failure hook to make failures easier to diagnose from CI or a
