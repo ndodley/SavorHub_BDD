@@ -29,6 +29,7 @@ src/test/java/savorhub/
             LogoutSteps.java  Step definitions for logout.feature
             RegisterSteps.java Step definitions for registration.feature
             FavoriteSteps.java Step definitions for favorites.feature
+            CartSteps.java    Step definitions for cart_and_checkout.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
@@ -36,6 +37,7 @@ src/test/resources/
   features/logout.feature         The Gherkin scenarios themselves
   features/registration.feature   The Gherkin scenarios themselves
   features/favorites.feature      The Gherkin scenarios themselves
+  features/cart_and_checkout.feature  The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
 ```
@@ -112,11 +114,22 @@ mvn test
 - `favorites.feature`
   - Favoriting a menu item shows it on the Favorites page
   - Removing a favorite asks for confirmation before it disappears
+- `cart_and_checkout.feature`
+  - Adding a menu item to the cart shows it with the correct total
+  - Adjusting quantity updates the total, and decreasing to zero removes
+    the item
+  - Removing an item from the cart empties it
+  - Proceeding to checkout reaches the order summary and starts a real
+    Stripe checkout session (stops at the redirect - does not complete
+    a payment, so it needs a Stripe secret key configured locally via
+    `dotnet user-secrets` to pass)
 
 ## Planned next steps
 
-- Additional feature files covering cart/checkout, order history,
-  reviews, password reset, and account management.
+- Additional feature files covering order history, reviews, password
+  reset, and account management. A follow-up to Cart & Checkout that
+  completes a real Stripe test payment end-to-end is also possible,
+  but is a bigger, more fragile lift than the current coverage.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
   parallel without sharing a single static driver.
 - Add a screenshot-on-failure hook to make failures easier to diagnose from CI or a
