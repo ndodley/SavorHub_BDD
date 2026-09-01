@@ -29,6 +29,9 @@ src/test/java/savorhub/
             LogoutSteps.java  Step definitions for logout.feature
             RegisterSteps.java Step definitions for registration.feature
             FavoriteSteps.java Step definitions for favorites.feature
+            CartSteps.java    Step definitions for cart_and_checkout.feature
+            OrderHistorySteps.java  Step definitions for order_history.feature
+            ReviewSteps.java  Step definitions for reviews.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
@@ -36,6 +39,9 @@ src/test/resources/
   features/logout.feature         The Gherkin scenarios themselves
   features/registration.feature   The Gherkin scenarios themselves
   features/favorites.feature      The Gherkin scenarios themselves
+  features/cart_and_checkout.feature  The Gherkin scenarios themselves
+  features/order_history.feature  The Gherkin scenarios themselves
+  features/reviews.feature        The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
 ```
@@ -112,11 +118,37 @@ mvn test
 - `favorites.feature`
   - Favoriting a menu item shows it on the Favorites page
   - Removing a favorite asks for confirmation before it disappears
+- `cart_and_checkout.feature`
+  - Adding a menu item to the cart shows it with the correct total
+  - Adjusting quantity updates the total, and decreasing to zero removes
+    the item
+  - Removing an item from the cart empties it
+  - Proceeding to checkout reaches the order summary and starts a real
+    Stripe checkout session (stops at the redirect - does not complete
+    a payment, so it needs a Stripe secret key configured locally via
+    `dotnet user-secrets` to pass)
+- `order_history.feature`
+  - A placed order appears in My Orders with the correct status
+  - Viewing an order's details shows the same order and total as My
+    Orders
+  - An order's details are reachable by URL even after logging out
+    (documents a real gap in SavorHub: OrderDetails has no
+    [Authorize] attribute and no ownership check at all)
+- `reviews.feature`
+  - Submitting a review shows it with the correct rating and content
+  - Editing my review updates its rating and content
+  - The review API's DELETE endpoint has no ownership check, so any
+    logged-in user can delete someone else's review (documents a
+    real gap in SavorHub: ReviewController's Delete action isn't
+    reachable from any page in the UI, but is still live and has no
+    ownership check at all - unlike its own GetAll/Get/Put actions)
 
 ## Planned next steps
 
-- Additional feature files covering cart/checkout, order history,
-  reviews, password reset, and account management.
+- Additional feature files covering password reset and account
+  management. A follow-up to Cart & Checkout that completes a real
+  Stripe test payment end-to-end is also possible, but is a bigger,
+  more fragile lift than the current coverage.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
   parallel without sharing a single static driver.
 - Add a screenshot-on-failure hook to make failures easier to diagnose from CI or a

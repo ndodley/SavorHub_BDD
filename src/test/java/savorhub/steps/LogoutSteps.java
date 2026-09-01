@@ -3,6 +3,7 @@ package savorhub.steps;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -28,6 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     clicked first.
  *   - The Register/Login links that reappear after logout carry
  *     id="register" / id="login".
+ *   - Whatever step ran immediately before logging out often leaves a
+ *     success toast (from a TempData message, e.g. after adding/editing a
+ *     review) sitting in the same top-right corner as the account dropdown,
+ *     which can still be visible when this step fires and blocks a plain
+ *     Selenium click on the dropdown toggle. Both clicks below go through
+ *     JavaScript for that reason - same fix as RegisterSteps' submit button,
+ *     CartSteps' Place Order button, and OrderHistorySteps' Details link.
  * If SavorHub's markup changes, re-check the real DOM in DevTools rather
  * than trusting this comment.
  */
@@ -38,9 +46,12 @@ public class LogoutSteps {
     @When("I log out")
     public void i_log_out() {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+
         WebElement accountDropdownToggle = wait.until(
                 ExpectedConditions.elementToBeClickable(By.cssSelector("a.dropdown-toggle.d-flex")));
-        accountDropdownToggle.click();
+        js.executeScript("arguments[0].scrollIntoView({block: 'center'});", accountDropdownToggle);
+        js.executeScript("arguments[0].click();", accountDropdownToggle);
 
         WebElement logoutButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("logout")));
         logoutButton.click();
