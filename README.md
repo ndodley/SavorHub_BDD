@@ -30,6 +30,7 @@ src/test/java/savorhub/
             RegisterSteps.java Step definitions for registration.feature
             FavoriteSteps.java Step definitions for favorites.feature
             CartSteps.java    Step definitions for cart_and_checkout.feature
+            OrderHistorySteps.java  Step definitions for order_history.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
@@ -38,6 +39,7 @@ src/test/resources/
   features/registration.feature   The Gherkin scenarios themselves
   features/favorites.feature      The Gherkin scenarios themselves
   features/cart_and_checkout.feature  The Gherkin scenarios themselves
+  features/order_history.feature  The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
 ```
@@ -123,13 +125,20 @@ mvn test
     Stripe checkout session (stops at the redirect - does not complete
     a payment, so it needs a Stripe secret key configured locally via
     `dotnet user-secrets` to pass)
+- `order_history.feature`
+  - A placed order appears in My Orders with the correct status
+  - Viewing an order's details shows the same order and total as My
+    Orders
+  - An order's details are reachable by URL even after logging out
+    (documents a real gap in SavorHub: OrderDetails has no
+    [Authorize] attribute and no ownership check at all)
 
 ## Planned next steps
 
-- Additional feature files covering order history, reviews, password
-  reset, and account management. A follow-up to Cart & Checkout that
-  completes a real Stripe test payment end-to-end is also possible,
-  but is a bigger, more fragile lift than the current coverage.
+- Additional feature files covering reviews, password reset, and
+  account management. A follow-up to Cart & Checkout that completes
+  a real Stripe test payment end-to-end is also possible, but is a
+  bigger, more fragile lift than the current coverage.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
   parallel without sharing a single static driver.
 - Add a screenshot-on-failure hook to make failures easier to diagnose from CI or a
