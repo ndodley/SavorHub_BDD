@@ -49,13 +49,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     "?handler=DeleteReview&id=5&reviewId=42"), which is how this suite
  *     reads a review's real database id straight off the page - there's no
  *     visible "review #42" label anywhere in the UI.
- *   - Menu Details' OnPostAddReview rejects a second review from the same
- *     user for the same item ("You have already reviewed this item."), so
+ *   - Menu Details' OnPostAddReview allows multiple reviews from the same
+ *     user for the same item (no "already reviewed" rejection). Even so,
  *     this feature always starts from a clean slate via "I have no
  *     existing review on this item", which deletes any leftover review
  *     from a previous run through the same UI flow a user would use (its
  *     confirm() dialog is handled the same way FavoriteSteps handles the
- *     Remove-favorite confirmation).
+ *     Remove-favorite confirmation) - that keeps exactly one review on
+ *     the item at a time, which is what myReviewCard()/captureMyReviewId()
+ *     below assume when locating "my" review.
+ *   - Add/Edit/Delete Review all submit through the page's AJAX
+ *     interceptor (site.js), which swaps the reviews card's markup in
+ *     place instead of a full page reload - the old form/button still
+ *     goes stale once the swap completes, so the existing
+ *     stalenessOf(...)/presenceOfElementLocated(...) waits below keep
+ *     working even though the browser never leaves the Details page.
  *   - ReviewController's DELETE /api/review/{id} action only requires the
  *     caller to be logged in ([Authorize], no role restriction) and
  *     performs no ownership check at all before deleting - unlike GetAll/
