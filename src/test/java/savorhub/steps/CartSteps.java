@@ -39,8 +39,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     (unnamed) OnPost handler - ShoppingCart.Count defaults to 1
  *     server-side, so the quantity input never needs to be touched for
  *     a single-item add. It requires being logged in (Challenge() if
- *     not) and redirects back to the menu list, not the cart, on
- *     success.
+ *     not). The button submits through the page's AJAX interceptor
+ *     (site.js), which swaps the item card's markup in place rather
+ *     than navigating anywhere, so this suite still sees the old
+ *     "Add to Cart" button go stale once the swap completes even
+ *     though the browser never leaves the Details page.
  *   - The cart's Plus/Minus/Remove buttons use asp-page-handler +
  *     asp-route-cartId directly on <button type="submit">, which
  *     ASP.NET Core's Form Action Tag Helper renders as a "formaction"
