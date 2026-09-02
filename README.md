@@ -32,6 +32,9 @@ src/test/java/savorhub/
             CartSteps.java    Step definitions for cart_and_checkout.feature
             OrderHistorySteps.java  Step definitions for order_history.feature
             ReviewSteps.java  Step definitions for reviews.feature
+            PasswordResetSteps.java  Step definitions for password_reset.feature
+            AccountManagementSteps.java  Step definitions for account_management.feature
+            HomepageSteps.java  Step definitions for homepage_navigation.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
@@ -42,6 +45,9 @@ src/test/resources/
   features/cart_and_checkout.feature  The Gherkin scenarios themselves
   features/order_history.feature  The Gherkin scenarios themselves
   features/reviews.feature        The Gherkin scenarios themselves
+  features/password_reset.feature The Gherkin scenarios themselves
+  features/account_management.feature  The Gherkin scenarios themselves
+  features/homepage_navigation.feature  The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
 ```
@@ -142,13 +148,40 @@ mvn test
     real gap in SavorHub: ReviewController's Delete action isn't
     reachable from any page in the UI, but is still live and has no
     ownership check at all - unlike its own GetAll/Get/Put actions)
+- `password_reset.feature`
+  - Requesting a password reset for a registered email, and for one
+    that isn't registered, both show the identical confirmation page
+    (SavorHub deliberately never reveals whether an email exists)
+  - Reset Password refuses to load without a reset code
+  - Does not cover the actual click-the-link-and-reset-your-password
+    journey - SavorHub's EmailSender is a no-op stub (it doesn't send
+    an email or log anything), so there's no way for these tests to
+    ever see a real reset link
+- `account_management.feature`
+  - Changing my password with the correct current password succeeds
+  - Changing my password with an incorrect current password shows an
+    error and doesn't navigate away
+  - Updating my phone number on the profile page succeeds
+  - Every scenario runs against a fresh, disposable registered
+    account (never the shared test.email account), since Change
+    Password genuinely mutates a real password and a failed run
+    could otherwise desync config.properties from the database
+  - Does not cover changing your email address - like password reset,
+    it needs a confirmation link that SavorHub's EmailSender silently
+    discards
+- `homepage_navigation.feature`
+  - The homepage shows its hero, Featured Items, and Why Choose Us
+    sections
+  - The Explore Menu button navigates to the menu page
+  - The footer's Privacy link navigates to the Privacy page
 
 ## Planned next steps
 
-- Additional feature files covering password reset and account
-  management. A follow-up to Cart & Checkout that completes a real
-  Stripe test payment end-to-end is also possible, but is a bigger,
-  more fragile lift than the current coverage.
+- The Admin suite (category/food type/menu item/order management,
+  review moderation) is the next major phase, once a Manager-role
+  test persona is set up. A follow-up to Cart & Checkout that
+  completes a real Stripe test payment end-to-end is also possible,
+  but is a bigger, more fragile lift than the current coverage.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
   parallel without sharing a single static driver.
 - Add a screenshot-on-failure hook to make failures easier to diagnose from CI or a
