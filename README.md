@@ -36,6 +36,7 @@ src/test/java/savorhub/
             AccountManagementSteps.java  Step definitions for account_management.feature
             HomepageSteps.java  Step definitions for homepage_navigation.feature
             CategoryManagementSteps.java  Step definitions for category_management.feature
+            FoodTypeManagementSteps.java  Step definitions for food_type_management.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
@@ -50,6 +51,7 @@ src/test/resources/
   features/account_management.feature  The Gherkin scenarios themselves
   features/homepage_navigation.feature  The Gherkin scenarios themselves
   features/category_management.feature  The Gherkin scenarios themselves
+  features/food_type_management.feature  The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
 ```
@@ -198,15 +200,26 @@ mvn test
   - The Admin Categories page requires being logged in, and a plain
     Customer account is redirected to Access Denied rather than the
     category list
+- `food_type_management.feature`
+  - Creating a food type shows it in the list
+  - A blank food type name is rejected (FoodType's only validation
+    rule is a plain [Required] on Name, caught client-side by jQuery
+    unobtrusive validation before any server round trip)
+  - Editing a food type updates its name in the list
+  - Deleting a food type removes it from the list
+  - The Admin Food Types page requires being logged in, and a plain
+    Customer account is redirected to Access Denied rather than the
+    food type list
 
 ## Planned next steps
 
-- The rest of the Admin suite (food type/menu item/order management,
-  review moderation) continues now that a Manager-role test persona
-  is set up (see category_management.feature). A follow-up to Cart &
-  Checkout that completes a real Stripe test payment end-to-end is
-  also possible, but is a bigger, more fragile lift than the current
-  coverage.
+- The rest of the Admin suite (menu item/order management, review
+  moderation) continues now that a Manager-role test persona is set
+  up and category and food type management are both covered (see
+  category_management.feature / food_type_management.feature). A
+  follow-up to Cart & Checkout that completes a real Stripe test
+  payment end-to-end is also possible, but is a bigger, more fragile
+  lift than the current coverage.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
   parallel without sharing a single static driver.
 - Add a screenshot-on-failure hook to make failures easier to diagnose from CI or a
