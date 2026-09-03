@@ -3,3 +3,11 @@
 base.url=https://localhost:44325
 test.email=your-test-user@example.com
 test.password=YourTestPassword1!
+
+# A pre-existing account with the Manager role, for the Admin test suite
+# (category/food type/menu item/order management, review moderation).
+# SavorHub has no way to self-register as a Manager - this account must
+# already exist in your local database (e.g. promoted directly in the
+# database, or registered as an employee by another Manager account).
+manager.email=your-manager-user@example.com
+manager.password=YourManagerPassword1!

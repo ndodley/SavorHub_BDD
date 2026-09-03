@@ -35,6 +35,7 @@ src/test/java/savorhub/
             PasswordResetSteps.java  Step definitions for password_reset.feature
             AccountManagementSteps.java  Step definitions for account_management.feature
             HomepageSteps.java  Step definitions for homepage_navigation.feature
+            CategoryManagementSteps.java  Step definitions for category_management.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
@@ -48,6 +49,7 @@ src/test/resources/
   features/password_reset.feature The Gherkin scenarios themselves
   features/account_management.feature  The Gherkin scenarios themselves
   features/homepage_navigation.feature  The Gherkin scenarios themselves
+  features/category_management.feature  The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
 ```
@@ -69,13 +71,19 @@ Each scenario gets its own Chrome window (opened in `Hooks`' `@Before` and close
 3. **Register a real test account** in SavorHub (the normal "Register" flow on the site).
    Don't reuse a personal or production-like account — this account's credentials will sit in
    plain text in a local config file.
-4. **Create your local config file.** In `src/test/resources/`, copy
+4. **Have a Manager-role account ready**, for the Admin suite (category/food type/menu item/
+   order management, review moderation). SavorHub has no self-registration path to the
+   Manager role — this account must already exist in your local database (promoted directly
+   in the database, or registered as an employee by another Manager account).
+5. **Create your local config file.** In `src/test/resources/`, copy
    `config.properties.example` to a new file named `config.properties` in the same folder,
-   then fill in your test account's real email and password:
+   then fill in your test accounts' real emails and passwords:
    ```properties
    base.url=https://localhost:44325
    test.email=your-real-test-account@example.com
    test.password=YourRealTestPassword1!
+   manager.email=your-real-manager-account@example.com
+   manager.password=YourRealManagerPassword1!
    ```
    `config.properties` is listed in `.gitignore` and will never be committed — that's the
    whole point of the split between the tracked `.example` template and this real file. Do
@@ -178,14 +186,27 @@ mvn test
     sections
   - The Explore Menu button navigates to the menu page
   - The footer's Privacy link navigates to the Privacy page
+- `category_management.feature` (first Admin suite feature, run as a
+  Manager)
+  - Creating a category shows it in the list with the correct display
+    order
+  - A category name that exactly matches its display order is
+    rejected (a real handler-level validation rule beyond Category's
+    own [Required]/[Range] attributes)
+  - Editing a category updates its name and display order in the list
+  - Deleting a category removes it from the list
+  - The Admin Categories page requires being logged in, and a plain
+    Customer account is redirected to Access Denied rather than the
+    category list
 
 ## Planned next steps
 
-- The Admin suite (category/food type/menu item/order management,
-  review moderation) is the next major phase, once a Manager-role
-  test persona is set up. A follow-up to Cart & Checkout that
-  completes a real Stripe test payment end-to-end is also possible,
-  but is a bigger, more fragile lift than the current coverage.
+- The rest of the Admin suite (food type/menu item/order management,
+  review moderation) continues now that a Manager-role test persona
+  is set up (see category_management.feature). A follow-up to Cart &
+  Checkout that completes a real Stripe test payment end-to-end is
+  also possible, but is a bigger, more fragile lift than the current
+  coverage.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
   parallel without sharing a single static driver.
 - Add a screenshot-on-failure hook to make failures easier to diagnose from CI or a

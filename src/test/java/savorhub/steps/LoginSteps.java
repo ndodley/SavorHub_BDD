@@ -15,22 +15,27 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Step definitions for login.feature.
  *
- * Field IDs below (Input_Email, Input_Password, login-submit) come straight
+ * <p>Field IDs below (Input_Email, Input_Password, login-submit) come straight
  * from SavorHub's real markup at Areas/Identity/Pages/Account/Login.cshtml
  * (ASP.NET Core Identity's scaffolded login page, tag helpers asp-for="Input.Email"
  * / asp-for="Input.Password" render as id="Input_Email" / id="Input_Password").
  * If SavorHub's login page changes, re-check the real DOM in DevTools rather
  * than trusting this comment.
  *
- * BASE_URL / VALID_EMAIL / VALID_PASSWORD come from
+ * <p>BASE_URL / VALID_EMAIL / VALID_PASSWORD come from
  * src/test/resources/config.properties, which is gitignored so real test
  * credentials never get committed. Copy config.properties.example to
  * config.properties (same folder) and fill in your local values.
+ *
+ * <p>MANAGER_EMAIL / MANAGER_PASSWORD come from the same file's manager.email
+ * / manager.password keys - a pre-existing account with the Manager role,
+ * needed by the Admin test suite. SavorHub has no self-registration path
+ * to that role, so this account must already exist in your local database.
  */
 public class LoginSteps {
 
@@ -41,6 +46,8 @@ public class LoginSteps {
     private static final String BASE_URL = CONFIG.getProperty("base.url");
     private static final String VALID_EMAIL = CONFIG.getProperty("test.email");
     private static final String VALID_PASSWORD = CONFIG.getProperty("test.password");
+    private static final String MANAGER_EMAIL = CONFIG.getProperty("manager.email");
+    private static final String MANAGER_PASSWORD = CONFIG.getProperty("manager.password");
 
     private static Properties loadConfig() {
         Properties props = new Properties();
@@ -77,6 +84,18 @@ public class LoginSteps {
         driver.findElement(By.id("login-submit")).click();
     }
 
+    @When("I log in with valid Manager credentials")
+    public void i_log_in_with_valid_manager_credentials() {
+        assertNotNull(MANAGER_EMAIL, "Missing manager.email in config.properties - see "
+                + "config.properties.example. The Admin test suite needs a pre-existing "
+                + "account with the Manager role; SavorHub has no self-registration path to one.");
+        assertNotNull(MANAGER_PASSWORD, "Missing manager.password in config.properties - see "
+                + "config.properties.example.");
+        driver.findElement(By.id("Input_Email")).sendKeys(MANAGER_EMAIL);
+        driver.findElement(By.id("Input_Password")).sendKeys(MANAGER_PASSWORD);
+        driver.findElement(By.id("login-submit")).click();
+    }
+
     @Then("I should see the account menu in the navbar")
     public void i_should_see_the_account_menu() {
         // SavorHub's navbar doesn't contain the literal word "Account" - once
@@ -87,11 +106,12 @@ public class LoginSteps {
         // uppercase but the underlying text/value is normal case.
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         String emailLower = VALID_EMAIL.toLowerCase();
-        boolean present = wait.until(ExpectedConditions.presenceOfElementLocated(
+        // wait.until(...) either returns the found element or throws
+        // TimeoutException - there's nothing left to assert afterward.
+        wait.until(ExpectedConditions.presenceOfElementLocated(
                 By.xpath("//*[contains(translate(., "
                         + "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '"
-                        + emailLower + "')]"))) != null;
-        assertTrue(present);
+                        + emailLower + "')]")));
     }
 
     @Then("I should see a login error message")
@@ -100,8 +120,8 @@ public class LoginSteps {
         // on a failed login, so this waits for that element rather than any
         // specific error text (which can change without the behavior changing).
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        boolean present = wait.until(ExpectedConditions.presenceOfElementLocated(
-                By.cssSelector("div[role='alert'].text-danger"))) != null;
-        assertTrue(present);
+        // Same reasoning as i_should_see_the_account_menu() above.
+        wait.until(ExpectedConditions.presenceOfElementLocated(
+                By.cssSelector("div[role='alert'].text-danger")));
     }
 }
