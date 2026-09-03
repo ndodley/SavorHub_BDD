@@ -137,17 +137,21 @@ mvn test
   - A placed order appears in My Orders with the correct status
   - Viewing an order's details shows the same order and total as My
     Orders
-  - An order's details are reachable by URL even after logging out
-    (documents a real gap in SavorHub: OrderDetails has no
-    [Authorize] attribute and no ownership check at all)
+  - An order's details require being logged back in after logging out
+    (OrderDetails is [Authorize]-protected, same as every other
+    customer-facing order/cart page)
+  - A different logged-in customer cannot view someone else's order
+    details (OrderDetails scopes to the order's own owner, or a
+    Manager/Front Desk/Kitchen staff role, returning NotFound()
+    otherwise)
 - `reviews.feature`
   - Submitting a review shows it with the correct rating and content
   - Editing my review updates its rating and content
-  - The review API's DELETE endpoint has no ownership check, so any
-    logged-in user can delete someone else's review (documents a
-    real gap in SavorHub: ReviewController's Delete action isn't
-    reachable from any page in the UI, but is still live and has no
-    ownership check at all - unlike its own GetAll/Get/Put actions)
+  - The review API's DELETE endpoint enforces ownership, so a
+    logged-in user cannot delete someone else's review
+    (ReviewController's Delete action isn't reachable from any page
+    in the UI, but is still live, and now scopes to the caller's own
+    review, same as its own GetAll/Get/Put actions)
 - `password_reset.feature`
   - Requesting a password reset for a registered email, and for one
     that isn't registered, both show the identical confirmation page

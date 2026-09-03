@@ -19,6 +19,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -42,16 +43,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     check for.
  *   - OrderDetails' route is "{id:int}" (a path segment, e.g.
  *     /Customer/Order/OrderDetails/5), not a query string, so the
- *     captured order ID doubles as a direct URL for the last scenario.
- *   - Notable gap found while reading OrderDetailsModel: unlike
- *     MyOrdersModel, it has no [Authorize] attribute at all, and its
- *     OnGet(id) looks the order up by id alone with no ownership check -
- *     so anyone who knows or guesses an order ID can view its full
- *     details, logged in or not. The third scenario here documents that
- *     behavior (logs out, then loads the order's URL directly and
- *     confirms it still renders) rather than silently relying on it -
- *     flagged to Nikhil the same way the Reviews delete-ownership gap
- *     was, as a real issue to decide on fixing in SavorHub itself.
+ *     captured order ID doubles as a direct URL for the last two
+ *     scenarios.
+ *   - OrderDetailsModel is now [Authorize]-protected and its OnGet(id)
+ *     scopes to the order's own OrderHeader.UserId (or a Manager/Front
+ *     Desk/Kitchen staff role) before rendering anything, returning
+ *     NotFound() otherwise - same posture as a genuinely missing id, so
+ *     a stranger can't tell a given order id exists at all. The third
+ *     scenario confirms a logged-out visit gets redirected to the login
+ *     page (the normal [Authorize] challenge, same as every other
+ *     [Authorize] page in this app); the fourth confirms a different
+ *     logged-in customer (a second, freshly registered account) still
+ *     can't see the first customer's order details.
  * If SavorHub's markup changes, re-check the real DOM in DevTools rather
  * than trusting this comment.
  */
@@ -109,18 +112,20 @@ public class OrderHistorySteps {
                 + "  const cells = row.querySelectorAll('td');"
                 + "  return [cells[0].innerText.trim(), cells[2].innerText.trim(), cells[3].innerText.trim()];"
                 + "});");
+        assertNotNull(rows, "Expected the browser-side row extraction script to return a list, but got null.");
         assertFalse(rows.isEmpty(), "Expected at least one order in My Orders, but the table was empty.");
 
         int highestId = -1;
         List<String> latestRow = null;
         for (List<String> row : rows) {
-            int rowId = Integer.parseInt(row.get(0));
+            int rowId = Integer.parseInt(row.getFirst());
             if (rowId > highestId) {
                 highestId = rowId;
                 latestRow = row;
             }
         }
 
+        assertNotNull(latestRow, "Expected to find a row with the highest order id, but none was found.");
         lastOrderId = highestId;
         lastOrderTotal = parsePrice(latestRow.get(1));
         lastOrderStatus = latestRow.get(2);
@@ -169,21 +174,28 @@ public class OrderHistorySteps {
         driver.get(BASE_URL + "/Customer/Order/OrderDetails/" + lastOrderId);
     }
 
-    @Then("I should still see that order's details")
-    public void i_should_still_see_that_orders_details() {
+    @Then("I should be redirected to the login page")
+    public void i_should_be_redirected_to_the_login_page() {
+        // SavorHub's cookie auth is configured with LoginPath =
+        // "/Identity/Account/Login" (Program.cs), so an [Authorize] page
+        // challenges an anonymous request with a redirect there rather
+        // than a bare 401 - the same thing every other [Authorize] page
+        // in this app does.
         try {
-            WebElement idBadge = shortWait().until(
-                    ExpectedConditions.presenceOfElementLocated(By.cssSelector("span.badge.bg-secondary")));
-            assertTrue(idBadge.getText().contains(String.valueOf(lastOrderId)));
+            shortWait().until(ExpectedConditions.urlContains("/Identity/Account/Login"));
         } catch (org.openqa.selenium.TimeoutException e) {
-            // Surface exactly where we ended up instead of a bare timeout -
-            // if SavorHub redirects an anonymous request away from this page
-            // through some mechanism this suite hasn't found yet (a filter,
-            // middleware, etc.), the URL below will show it.
             throw new AssertionError(
-                    "Expected to still see the order's details while logged out, but didn't. "
-                    + "Current URL: " + driver.getCurrentUrl()
-                    + " | Page title: " + driver.getTitle(), e);
+                    "Expected to be redirected to the login page after visiting the order details URL "
+                    + "while logged out, but wasn't. Current URL: " + driver.getCurrentUrl(), e);
         }
+    }
+
+    @Then("I should not see that order's details")
+    public void i_should_not_see_that_orders_details() {
+        List<WebElement> idBadges = driver.findElements(By.cssSelector("span.badge.bg-secondary"));
+        assertTrue(idBadges.isEmpty(),
+                "Expected NOT to see order #" + lastOrderId + "'s details as a different logged-in "
+                + "customer (the ownership check should have returned NotFound), but the order ID "
+                + "badge was present. Current URL: " + driver.getCurrentUrl());
     }
 }

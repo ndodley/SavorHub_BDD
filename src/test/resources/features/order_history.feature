@@ -28,7 +28,7 @@ Feature: Order history
     Then the order details should show the same order ID and total as My Orders
     And I should see at least one item listed in the order
 
-  Scenario: An order's details are reachable by URL even after logging out
+  Scenario: An order's details require being logged back in after logging out
     Given I am on the SavorHub menu page
     And I add the first menu item to my cart
     And I go to the Cart page
@@ -38,4 +38,17 @@ Feature: Order history
     When I log out
     And I should see the login and register links in the navbar
     And I visit that order's details page directly
-    Then I should still see that order's details
+    Then I should be redirected to the login page
+
+  Scenario: Another logged-in customer cannot view someone else's order details
+    Given I am on the SavorHub menu page
+    And I add the first menu item to my cart
+    And I go to the Cart page
+    And I proceed to checkout
+    And I place the order
+    And I go to my orders page
+    When I log out
+    And I am on the SavorHub registration page
+    And I register with a new unique email and valid details
+    And I visit that order's details page directly
+    Then I should not see that order's details

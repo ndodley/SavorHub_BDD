@@ -17,6 +17,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -64,17 +66,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     goes stale once the swap completes, so the existing
  *     stalenessOf(...)/presenceOfElementLocated(...) waits below keep
  *     working even though the browser never leaves the Details page.
- *   - ReviewController's DELETE /api/review/{id} action only requires the
- *     caller to be logged in ([Authorize], no role restriction) and
- *     performs no ownership check at all before deleting - unlike GetAll/
- *     Get/Put on that same controller, which all correctly scope to
- *     "r.UserId == userId". Nothing in the customer-facing UI links to
- *     this controller (the admin-side review management page has its own,
- *     separate, role-gated Razor Page handlers instead), but the action
- *     itself is still live and reachable by any authenticated browser
- *     session issuing the HTTP request directly - exactly what the third
- *     scenario in this feature does via a fetch() call executed in the
- *     browser, using the second (attacker) account's own login cookie.
+ *   - ReviewController's DELETE /api/review/{id} action now scopes to
+ *     "r.Id == id && r.UserId == userId", same as GetAll/Get/Put on that
+ *     same controller - a review that exists but belongs to someone else
+ *     falls into the same "not found" JSON branch as a genuinely missing
+ *     id, so the response looks identical either way
+ *     ({"success":false,"message":"Error while deleting"}). Nothing in
+ *     the customer-facing UI links to this controller (the admin-side
+ *     review management page has its own, separate, role-gated Razor
+ *     Page handlers instead), but the action is still live and reachable
+ *     by any authenticated browser session issuing the HTTP request
+ *     directly - exactly what the third scenario in this feature does via
+ *     a fetch() call executed in the browser, using the second (attacker)
+ *     account's own login cookie, then confirms the original review is
+ *     untouched.
  * If SavorHub's markup or code changes, re-check the real DOM/source
  * rather than trusting this comment.
  */
@@ -138,6 +143,7 @@ public class ReviewSteps {
         WebElement deleteForm = shortWait().until(
                 ExpectedConditions.presenceOfElementLocated(By.cssSelector("form[action*='handler=DeleteReview']")));
         String action = deleteForm.getAttribute("action");
+        assertNotNull(action, "Expected the delete form to have an action attribute, but it was null.");
         Matcher matcher = Pattern.compile("reviewId=(\\d+)").matcher(action);
         if (!matcher.find()) {
             throw new AssertionError("Could not find a reviewId in the delete form's action: " + action);
@@ -186,8 +192,8 @@ public class ReviewSteps {
         captureMyReviewId();
     }
 
-    @When("the newly registered user deletes my review by calling the review API directly")
-    public void the_newly_registered_user_deletes_my_review_via_the_api() {
+    @When("the newly registered user tries to delete my review by calling the review API directly")
+    public void the_newly_registered_user_tries_to_delete_my_review_via_the_api() {
         JavascriptExecutor js = (JavascriptExecutor) driver;
         lastApiResponse = (String) js.executeAsyncScript(
                 "var callback = arguments[arguments.length - 1];"
@@ -198,17 +204,18 @@ public class ReviewSteps {
                 myReviewId);
     }
 
-    @Then("the review API reports the delete as successful")
-    public void the_review_api_reports_the_delete_as_successful() {
-        assertTrue(lastApiResponse != null && lastApiResponse.contains("\"success\":true"),
-                "Expected DELETE /api/review/" + myReviewId + " to report success (documenting the "
-                + "missing ownership check on that endpoint), but got: " + lastApiResponse);
+    @Then("the review API reports the delete as unsuccessful")
+    public void the_review_api_reports_the_delete_as_unsuccessful() {
+        assertTrue(lastApiResponse != null && lastApiResponse.contains("\"success\":false"),
+                "Expected DELETE /api/review/" + myReviewId + " to be rejected (the endpoint now scopes "
+                + "deletes to the caller's own review), but got: " + lastApiResponse);
     }
 
-    @Then("I should no longer see my review on that item")
-    public void i_should_no_longer_see_my_review_on_that_item() {
+    @Then("I should still see my review on that item")
+    public void i_should_still_see_my_review_on_that_item() {
         List<WebElement> deleteForms = driver.findElements(By.cssSelector("form[action*='handler=DeleteReview']"));
-        assertTrue(deleteForms.isEmpty(),
-                "Expected my review to be gone (deleted by the other account via the API), but it's still showing.");
+        assertFalse(deleteForms.isEmpty(),
+                "Expected my review to still be there (the other account's delete attempt should have "
+                + "been rejected by the ownership check), but no review with a Delete button was found.");
     }
 }
