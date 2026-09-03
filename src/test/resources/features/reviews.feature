@@ -20,16 +20,16 @@ Feature: Reviews
     When I edit my review to a rating of 5 and content "Updated: actually really good on the second try!"
     Then I should see my review listed with a rating of 5 and content "Updated: actually really good on the second try!"
 
-  Scenario: The review API's delete endpoint has no ownership check, so any logged-in user can delete someone else's review
+  Scenario: The review API's delete endpoint enforces ownership, so a logged-in user cannot delete someone else's review
     Given I submit a review with a rating of 4 and content "Great flavor, would recommend."
     When I log out
     And I am on the SavorHub registration page
     And I register with a new unique email and valid details
-    And the newly registered user deletes my review by calling the review API directly
-    Then the review API reports the delete as successful
+    And the newly registered user tries to delete my review by calling the review API directly
+    Then the review API reports the delete as unsuccessful
     When I log out
     And I am on the SavorHub login page
     And I log in with a valid email and password
     And I am on the SavorHub menu page
     And I click on the first menu item
-    Then I should no longer see my review on that item
+    Then I should still see my review on that item
