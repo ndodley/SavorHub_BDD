@@ -37,6 +37,7 @@ src/test/java/savorhub/
             HomepageSteps.java  Step definitions for homepage_navigation.feature
             CategoryManagementSteps.java  Step definitions for category_management.feature
             FoodTypeManagementSteps.java  Step definitions for food_type_management.feature
+            MenuItemManagementSteps.java  Step definitions for menu_item_management.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
@@ -52,8 +53,10 @@ src/test/resources/
   features/homepage_navigation.feature  The Gherkin scenarios themselves
   features/category_management.feature  The Gherkin scenarios themselves
   features/food_type_management.feature  The Gherkin scenarios themselves
+  features/menu_item_management.feature  The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
+  testdata/sample-menu-item.png   Tiny fixture image, uploaded by menu_item_management.feature
 ```
 
 Each scenario gets its own Chrome window (opened in `Hooks`' `@Before` and closed in
@@ -210,16 +213,34 @@ mvn test
   - The Admin Food Types page requires being logged in, and a plain
     Customer account is redirected to Access Denied rather than the
     food type list
+- `menu_item_management.feature`
+  - Creating a menu item (name, price, an existing Category and Food
+    Type, and an uploaded image) shows it in the list
+  - Creating a menu item without choosing an image is rejected
+    client-side with a SweetAlert2 popup (Image has no server-side
+    [Required] attribute - the Create handler would otherwise throw
+    trying to read a file that was never uploaded)
+  - Editing a menu item updates its name in the list
+  - Deleting a menu item (a SweetAlert2 confirm, then an AJAX DELETE
+    call - not a confirmation page like Category/FoodType) removes
+    it from the list
+  - The Admin Menu Items page requires being logged in, and a plain
+    Customer account is redirected to Access Denied rather than the
+    menu item list
+  - Unlike Category/FoodType, the menu item list is a DataTables grid
+    populated via AJAX and paginated client-side, so every scenario
+    filters to the item under test through DataTables' own search box
+    rather than assuming a row is already in the DOM
 
 ## Planned next steps
 
-- The rest of the Admin suite (menu item/order management, review
-  moderation) continues now that a Manager-role test persona is set
-  up and category and food type management are both covered (see
-  category_management.feature / food_type_management.feature). A
-  follow-up to Cart & Checkout that completes a real Stripe test
-  payment end-to-end is also possible, but is a bigger, more fragile
-  lift than the current coverage.
+- The rest of the Admin suite (order management, review moderation)
+  continues now that a Manager-role test persona is set up and
+  category, food type, and menu item management are all covered (see
+  category_management.feature / food_type_management.feature /
+  menu_item_management.feature). A follow-up to Cart & Checkout that
+  completes a real Stripe test payment end-to-end is also possible,
+  but is a bigger, more fragile lift than the current coverage.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
   parallel without sharing a single static driver.
 - Add a screenshot-on-failure hook to make failures easier to diagnose from CI or a
