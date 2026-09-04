@@ -38,6 +38,7 @@ src/test/java/savorhub/
             CategoryManagementSteps.java  Step definitions for category_management.feature
             FoodTypeManagementSteps.java  Step definitions for food_type_management.feature
             MenuItemManagementSteps.java  Step definitions for menu_item_management.feature
+            OrderManagementSteps.java  Step definitions for order_management.feature
 
 src/test/resources/
   features/login.feature          The Gherkin scenarios themselves
@@ -54,6 +55,7 @@ src/test/resources/
   features/category_management.feature  The Gherkin scenarios themselves
   features/food_type_management.feature  The Gherkin scenarios themselves
   features/menu_item_management.feature  The Gherkin scenarios themselves
+  features/order_management.feature  The Gherkin scenarios themselves
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
   testdata/sample-menu-item.png   Tiny fixture image, uploaded by menu_item_management.feature
@@ -231,14 +233,43 @@ mvn test
     populated via AJAX and paginated client-side, so every scenario
     filters to the item under test through DataTables' own search box
     rather than assuming a row is already in the DOM
+- `order_management.feature`
+  - A Manager can view the Order List page and the Manage Orders page
+    (both are DataTables grids populated via AJAX, same pattern as
+    the menu item list)
+  - A Manager can view a completed order's details (found dynamically
+    from the Order List's Completed tab, rather than a hardcoded
+    order id, since Completed orders never change and are safe to
+    reuse across runs)
+  - Requesting details for a nonexistent order id shows a not-found
+    response instead of crashing (a real bug found and fixed in
+    SavorHub during this suite's research: OrderDetailsModel.OnGet
+    had no null check and threw a NullReferenceException for a bad
+    id - it now returns NotFound())
+  - Unlike every other Admin page covered so far, these three pages
+    do not share one role gate: Order List and Order Details are
+    Manager/Front Desk, Manage Orders is Manager/Kitchen. Only a
+    Manager test account exists, so every scenario here logs in as
+    Manager, and access-control coverage is limited to "logged out"
+    and "plain Customer" for all three pages
+  - Does not cover the order-lifecycle transition buttons (Start
+    Cooking / Order Ready / Cancel on Manage Orders; Complete /
+    Cancel on Order Details) - there's no way to seed a fresh
+    Submitted-status order without completing a real Stripe payment,
+    which this suite deliberately never does, and nothing else in
+    SavorHub can create one. Revisit if that ever changes
+  - Also fixed in SavorHub while researching this suite: Order
+    Details rendered a "Refund" button whose handler was entirely
+    commented out, so clicking it always failed - removed until the
+    handler is actually implemented
 
 ## Planned next steps
 
-- The rest of the Admin suite (order management, review moderation)
-  continues now that a Manager-role test persona is set up and
-  category, food type, and menu item management are all covered (see
-  category_management.feature / food_type_management.feature /
-  menu_item_management.feature). A follow-up to Cart & Checkout that
+- The rest of the Admin suite (review moderation) continues now that
+  category, food type, menu item, and order management are all
+  covered (see category_management.feature /
+  food_type_management.feature / menu_item_management.feature /
+  order_management.feature). A follow-up to Cart & Checkout that
   completes a real Stripe test payment end-to-end is also possible,
   but is a bigger, more fragile lift than the current coverage.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in
