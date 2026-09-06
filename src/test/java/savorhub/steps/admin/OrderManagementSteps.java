@@ -1,21 +1,14 @@
-package savorhub.steps;
+package savorhub.steps.admin;
 
-import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -89,37 +82,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup or code changes, re-check the real DOM/source rather
  * than trusting this comment.
  */
-public class OrderManagementSteps {
+public class OrderManagementSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
-
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = OrderManagementSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
 
     private WebDriverWait shortWait() {
         return new WebDriverWait(driver, Duration.ofSeconds(10));
-    }
-
-    private void scrollToCenterAndClick(WebElement element) {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", element);
-        js.executeScript("arguments[0].click();", element);
     }
 
     private By pageHeading(String text) {
@@ -128,7 +96,7 @@ public class OrderManagementSteps {
 
     @When("I visit the Admin Order List page directly")
     public void i_visit_the_admin_order_list_page_directly() {
-        driver.get(BASE_URL + "/Admin/Order/OrderList");
+        navigateTo(BASE_URL + "/Admin/Order/OrderList");
     }
 
     @Then("I should see the Order List page")
@@ -138,7 +106,7 @@ public class OrderManagementSteps {
 
     @When("I visit the Manage Orders page directly")
     public void i_visit_the_manage_orders_page_directly() {
-        driver.get(BASE_URL + "/Admin/Order/ManageOrder");
+        navigateTo(BASE_URL + "/Admin/Order/ManageOrder");
     }
 
     @Then("I should see the Manage Orders page")
@@ -150,12 +118,12 @@ public class OrderManagementSteps {
     public void i_visit_the_admin_order_details_page_directly() {
         // Any id works here - [Authorize] runs before OnGet ever looks up the order, so
         // an anonymous/customer request never reaches the point where the id matters.
-        driver.get(BASE_URL + "/Admin/Order/OrderDetails?id=1");
+        navigateTo(BASE_URL + "/Admin/Order/OrderDetails?id=1");
     }
 
     @When("I open the details page for a completed order")
     public void i_open_the_details_page_for_a_completed_order() {
-        driver.get(BASE_URL + "/Admin/Order/OrderList?status=completed");
+        navigateTo(BASE_URL + "/Admin/Order/OrderList?status=completed");
         WebElement detailsLink = shortWait().until(ExpectedConditions.presenceOfElementLocated(
                 By.cssSelector("#DT_load tbody tr a[href*='OrderDetails']")));
         scrollToCenterAndClick(detailsLink);
@@ -168,7 +136,7 @@ public class OrderManagementSteps {
 
     @When("I visit the details page for an order id that does not exist")
     public void i_visit_the_details_page_for_an_order_id_that_does_not_exist() {
-        driver.get(BASE_URL + "/Admin/Order/OrderDetails?id=999999999");
+        navigateTo(BASE_URL + "/Admin/Order/OrderDetails?id=999999999");
     }
 
     @Then("I should see a not found response")

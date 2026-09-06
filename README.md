@@ -22,44 +22,33 @@ ChromeDriver automatically — there's no browser driver binary to install or ma
 
 ```
 src/test/java/savorhub/
-  hooks/    Hooks.java        Opens a fresh Chrome window before each scenario, closes it after
-  runners/  TestRunner.java   JUnit 5 entry point that discovers and runs the .feature files
-  steps/    LoginSteps.java   Step definitions for login.feature
-            MenuSteps.java    Step definitions for menu.feature
-            LogoutSteps.java  Step definitions for logout.feature
-            RegisterSteps.java Step definitions for registration.feature
-            FavoriteSteps.java Step definitions for favorites.feature
-            CartSteps.java    Step definitions for cart_and_checkout.feature
-            OrderHistorySteps.java  Step definitions for order_history.feature
-            ReviewSteps.java  Step definitions for reviews.feature
-            PasswordResetSteps.java  Step definitions for password_reset.feature
-            AccountManagementSteps.java  Step definitions for account_management.feature
-            HomepageSteps.java  Step definitions for homepage_navigation.feature
-            CategoryManagementSteps.java  Step definitions for category_management.feature
-            FoodTypeManagementSteps.java  Step definitions for food_type_management.feature
-            MenuItemManagementSteps.java  Step definitions for menu_item_management.feature
-            OrderManagementSteps.java  Step definitions for order_management.feature
+  hooks/    Hooks.java              Opens a fresh Chrome window before each scenario, closes it after
+  runners/  TestRunner.java         JUnit 5 entry point that discovers and runs the .feature files
+  steps/    BaseSteps.java          Shared base class every step class extends - the WebDriver, loaded
+                                    config.properties, and the scroll-then-click helper used to dodge
+                                    ElementClickInterceptedException, all defined once instead of per class
+            common/     LoginSteps.java, LogoutSteps.java, RegisterSteps.java, PasswordResetSteps.java
+            customer/   AccountManagementSteps.java, CartSteps.java, FavoriteSteps.java,
+                        HomepageSteps.java, MenuSteps.java, OrderHistorySteps.java, ReviewSteps.java
+            admin/      CategoryManagementSteps.java, FoodTypeManagementSteps.java,
+                        MenuItemManagementSteps.java, OrderManagementSteps.java, ReviewModerationSteps.java
 
 src/test/resources/
-  features/login.feature          The Gherkin scenarios themselves
-  features/menu.feature           The Gherkin scenarios themselves
-  features/logout.feature         The Gherkin scenarios themselves
-  features/registration.feature   The Gherkin scenarios themselves
-  features/favorites.feature      The Gherkin scenarios themselves
-  features/cart_and_checkout.feature  The Gherkin scenarios themselves
-  features/order_history.feature  The Gherkin scenarios themselves
-  features/reviews.feature        The Gherkin scenarios themselves
-  features/password_reset.feature The Gherkin scenarios themselves
-  features/account_management.feature  The Gherkin scenarios themselves
-  features/homepage_navigation.feature  The Gherkin scenarios themselves
-  features/category_management.feature  The Gherkin scenarios themselves
-  features/food_type_management.feature  The Gherkin scenarios themselves
-  features/menu_item_management.feature  The Gherkin scenarios themselves
-  features/order_management.feature  The Gherkin scenarios themselves
+  features/common/     login.feature, logout.feature, registration.feature, password_reset.feature
+  features/customer/   account_management.feature, cart_and_checkout.feature, favorites.feature,
+                       homepage_navigation.feature, menu.feature, order_history.feature, reviews.feature
+  features/admin/      category_management.feature, food_type_management.feature,
+                       menu_item_management.feature, order_management.feature, review_moderation.feature
   config.properties.example       Tracked template — copy this, don't edit it directly
   config.properties               Your real local config — gitignored, never committed
   testdata/sample-menu-item.png   Tiny fixture image, uploaded by menu_item_management.feature
 ```
+
+Step classes are organized to mirror the features they implement: `common/` holds auth and account
+lifecycle steps shared across roles, `customer/` holds regular shopper-facing flows, and `admin/`
+holds Manager-only moderation and management pages. `BaseSteps` sits above all three - it's plain
+Java state and helper methods, not a Cucumber step definition, so it's always safe for every step
+class to extend regardless of which of the three packages it lives in.
 
 Each scenario gets its own Chrome window (opened in `Hooks`' `@Before` and closed in
 `@After`), so scenarios never leak cookies or session state into one another.
@@ -262,14 +251,32 @@ mvn test
     Details rendered a "Refund" button whose handler was entirely
     commented out, so clicking it always failed - removed until the
     handler is actually implemented
+- `review_moderation.feature` (final feature of the Admin suite)
+  - A Manager can view the Review List page
+  - A Manager can edit a customer's review (rating and content) and
+    a Manager can delete a customer's review
+  - Editing a review with blank content is rejected - Content has no
+    client-side constraint at all, so this genuinely round-trips to
+    the server's real validation, unlike Rating, which is blocked by
+    the browser's own min/max constraint before it ever reaches
+    SavorHub
+  - Unlike every other page in this suite, Admin/Reviews was already
+    fully defensively written (null checks and NotFound() on Edit,
+    Delete, and the API's ownership-scoped endpoints) before this
+    suite touched it, so no app-code fixes were needed here
+  - Each edit/delete/validation scenario creates its own review as
+    the Customer test account first (reusing
+    menu.feature/reviews.feature's own steps), tagged with unique
+    content, then moderates it as Manager - this can never collide
+    with reviews.feature's own reviews or another run of this suite
 
 ## Planned next steps
 
-- The rest of the Admin suite (review moderation) continues now that
-  category, food type, menu item, and order management are all
-  covered (see category_management.feature /
-  food_type_management.feature / menu_item_management.feature /
-  order_management.feature). A follow-up to Cart & Checkout that
+- The Admin suite is now fully covered (category, food type, menu
+  item, order, and review management - see
+  category_management.feature / food_type_management.feature /
+  menu_item_management.feature / order_management.feature /
+  review_moderation.feature). A follow-up to Cart & Checkout that
   completes a real Stripe test payment end-to-end is also possible,
   but is a bigger, more fragile lift than the current coverage.
 - Convert `Hooks.driver` to a `ThreadLocal<WebDriver>` so scenarios can eventually run in

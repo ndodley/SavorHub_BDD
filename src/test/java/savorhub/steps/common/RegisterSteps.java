@@ -1,23 +1,17 @@
-package savorhub.steps;
+package savorhub.steps.common;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Properties;
 import java.util.UUID;
-
 
 /**
  * Step definitions for registration.feature.
@@ -40,34 +34,15 @@ import java.util.UUID;
  * If SavorHub's markup or Identity configuration changes, re-check the
  * real DOM/config rather than trusting this comment.
  */
-public class RegisterSteps {
+public class RegisterSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
 
     private String newAccountEmail;
 
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = RegisterSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
-
     @Given("I am on the SavorHub registration page")
     public void i_am_on_the_registration_page() {
-        driver.get(BASE_URL + "/Identity/Account/Register");
+        navigateTo(BASE_URL + "/Identity/Account/Register");
     }
 
     @When("I register with a new unique email and valid details")

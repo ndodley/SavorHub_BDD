@@ -1,20 +1,15 @@
-package savorhub.steps;
+package savorhub.steps.common;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Properties;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,29 +46,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup or code changes, re-check the real DOM/source
  * rather than trusting this comment.
  */
-public class PasswordResetSteps {
+public class PasswordResetSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
     private static final String VALID_EMAIL = CONFIG.getProperty("test.email");
-
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = PasswordResetSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
 
     private WebDriverWait shortWait() {
         return new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -81,7 +57,7 @@ public class PasswordResetSteps {
 
     @Given("I am on the SavorHub forgot password page")
     public void i_am_on_the_forgot_password_page() {
-        driver.get(BASE_URL + "/Identity/Account/ForgotPassword");
+        navigateTo(BASE_URL + "/Identity/Account/ForgotPassword");
     }
 
     @When("I request a password reset for a registered email")
@@ -107,7 +83,7 @@ public class PasswordResetSteps {
 
     @When("I visit the Reset Password page directly with no code")
     public void i_visit_the_reset_password_page_directly_with_no_code() {
-        driver.get(BASE_URL + "/Identity/Account/ResetPassword");
+        navigateTo(BASE_URL + "/Identity/Account/ResetPassword");
     }
 
     @Then("I should see a message that a code must be supplied")

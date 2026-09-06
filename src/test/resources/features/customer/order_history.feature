@@ -7,6 +7,7 @@ Feature: Order history
   Background:
     Given I am on the SavorHub login page
     And I log in with a valid email and password
+    And my cart is empty
 
   Scenario: A placed order appears in My Orders with the correct status
     Given I am on the SavorHub menu page

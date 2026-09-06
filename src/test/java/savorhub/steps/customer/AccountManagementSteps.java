@@ -1,20 +1,15 @@
-package savorhub.steps;
+package savorhub.steps.customer;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,11 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup or code changes, re-check the real DOM/source
  * rather than trusting this comment.
  */
-public class AccountManagementSteps {
+public class AccountManagementSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
 
     // Matches RegisterSteps' own hardcoded password for a freshly-registered
@@ -71,29 +63,13 @@ public class AccountManagementSteps {
     // update this constant too.
     private static final String FRESH_ACCOUNT_PASSWORD = "Test1234!";
 
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = AccountManagementSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
-
     private WebDriverWait shortWait() {
         return new WebDriverWait(driver, Duration.ofSeconds(10));
     }
 
     @Given("I am on the SavorHub change password page")
     public void i_am_on_the_change_password_page() {
-        driver.get(BASE_URL + "/Identity/Account/Manage/ChangePassword");
+        navigateTo(BASE_URL + "/Identity/Account/Manage/ChangePassword");
     }
 
     @When("I change my password to a new valid password")
@@ -134,7 +110,7 @@ public class AccountManagementSteps {
 
     @Given("I am on the SavorHub manage profile page")
     public void i_am_on_the_manage_profile_page() {
-        driver.get(BASE_URL + "/Identity/Account/Manage");
+        navigateTo(BASE_URL + "/Identity/Account/Manage");
     }
 
     @When("I update my phone number to a new value")

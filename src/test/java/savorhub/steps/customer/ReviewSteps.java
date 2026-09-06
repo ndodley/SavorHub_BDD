@@ -1,15 +1,14 @@
-package savorhub.steps;
+package savorhub.steps.customer;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
 import java.time.Duration;
 import java.util.List;
@@ -83,9 +82,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup or code changes, re-check the real DOM/source
  * rather than trusting this comment.
  */
-public class ReviewSteps {
-
-    private final WebDriver driver = Hooks.driver;
+public class ReviewSteps extends BaseSteps {
 
     private int myReviewId = -1;
     private String lastApiResponse;

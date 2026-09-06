@@ -1,19 +1,15 @@
-package savorhub.steps;
+package savorhub.steps.common;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -37,11 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * needed by the Admin test suite. SavorHub has no self-registration path
  * to that role, so this account must already exist in your local database.
  */
-public class LoginSteps {
-
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
+public class LoginSteps extends BaseSteps {
 
     private static final String BASE_URL = CONFIG.getProperty("base.url");
     private static final String VALID_EMAIL = CONFIG.getProperty("test.email");
@@ -49,37 +41,32 @@ public class LoginSteps {
     private static final String MANAGER_EMAIL = CONFIG.getProperty("manager.email");
     private static final String MANAGER_PASSWORD = CONFIG.getProperty("manager.password");
 
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = LoginSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
+    // None of the three login methods below waited for the form to actually
+    // render before calling driver.findElement(Input_Email) - they relied on
+    // EAGER's page-load-strategy handoff alone, with zero margin (implicit
+    // wait is 0). That's normally fine since this is a plain server-rendered
+    // form, but give it an explicit short wait anyway rather than assume
+    // "interactive" always means this particular element is already parsed.
+    private WebElement emailField() {
+        return new WebDriverWait(driver, Duration.ofSeconds(10))
+                .until(ExpectedConditions.presenceOfElementLocated(By.id("Input_Email")));
     }
 
     @Given("I am on the SavorHub login page")
     public void i_am_on_the_login_page() {
-        driver.get(BASE_URL + "/Identity/Account/Login");
+        navigateTo(BASE_URL + "/Identity/Account/Login");
     }
 
     @When("I log in with a valid email and password")
     public void i_log_in_with_valid_credentials() {
-        driver.findElement(By.id("Input_Email")).sendKeys(VALID_EMAIL);
+        emailField().sendKeys(VALID_EMAIL);
         driver.findElement(By.id("Input_Password")).sendKeys(VALID_PASSWORD);
         driver.findElement(By.id("login-submit")).click();
     }
 
     @When("I log in with an incorrect password")
     public void i_log_in_with_incorrect_password() {
-        driver.findElement(By.id("Input_Email")).sendKeys(VALID_EMAIL);
+        emailField().sendKeys(VALID_EMAIL);
         driver.findElement(By.id("Input_Password")).sendKeys("wrong-password");
         driver.findElement(By.id("login-submit")).click();
     }
@@ -91,7 +78,7 @@ public class LoginSteps {
                 + "account with the Manager role; SavorHub has no self-registration path to one.");
         assertNotNull(MANAGER_PASSWORD, "Missing manager.password in config.properties - see "
                 + "config.properties.example.");
-        driver.findElement(By.id("Input_Email")).sendKeys(MANAGER_EMAIL);
+        emailField().sendKeys(MANAGER_EMAIL);
         driver.findElement(By.id("Input_Password")).sendKeys(MANAGER_PASSWORD);
         driver.findElement(By.id("login-submit")).click();
     }

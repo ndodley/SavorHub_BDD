@@ -1,26 +1,20 @@
-package savorhub.steps;
+package savorhub.steps.admin;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -85,30 +79,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup or code changes, re-check the real DOM/source rather than
  * trusting this comment.
  */
-public class MenuItemManagementSteps {
+public class MenuItemManagementSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
 
     private String menuItemName;
-
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = MenuItemManagementSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
 
     private WebDriverWait shortWait() {
         return new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -141,15 +116,6 @@ public class MenuItemManagementSteps {
         return By.xpath("//td[normalize-space(text())='" + menuItemName + "']");
     }
 
-    // Same reasoning and pattern as CategoryManagementSteps.scrollToCenterAndClick():
-    // a scroll-then-JS-click sidesteps ElementClickInterceptedException from a toastr
-    // notification, or anything else transiently overlapping the target.
-    private void scrollToCenterAndClick(WebElement element) {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", element);
-        js.executeScript("arguments[0].click();", element);
-    }
-
     private void fillCommonFields(String name) {
         WebElement nameInput = shortWait().until(ExpectedConditions.presenceOfElementLocated(By.id("MenuItem_Name")));
         nameInput.clear();
@@ -177,12 +143,12 @@ public class MenuItemManagementSteps {
 
     @Given("I am on the Admin Menu Items page")
     public void i_am_on_the_admin_menu_items_page() {
-        driver.get(BASE_URL + "/Admin/MenuItems");
+        navigateTo(BASE_URL + "/Admin/MenuItems");
     }
 
     @When("I visit the Admin Menu Items page directly")
     public void i_visit_the_admin_menu_items_page_directly() {
-        driver.get(BASE_URL + "/Admin/MenuItems");
+        navigateTo(BASE_URL + "/Admin/MenuItems");
     }
 
     // Registered as a single @When and reused verbatim as a Given in the
@@ -191,7 +157,7 @@ public class MenuItemManagementSteps {
     @When("I create a new menu item with a unique name, a price, and an image")
     public void i_create_a_new_menu_item_with_a_unique_name_a_price_and_an_image() {
         menuItemName = "Test Menu Item " + UUID.randomUUID();
-        driver.get(BASE_URL + "/Admin/MenuItems/Upsert");
+        navigateTo(BASE_URL + "/Admin/MenuItems/Upsert");
         fillCommonFields(menuItemName);
         driver.findElement(By.id("uploadBox")).sendKeys(sampleImagePath());
         submit();
@@ -211,7 +177,7 @@ public class MenuItemManagementSteps {
 
     @When("I try to create a menu item without choosing an image")
     public void i_try_to_create_a_menu_item_without_choosing_an_image() {
-        driver.get(BASE_URL + "/Admin/MenuItems/Upsert");
+        navigateTo(BASE_URL + "/Admin/MenuItems/Upsert");
         fillCommonFields("Test Menu Item " + UUID.randomUUID());
         submit();
     }
@@ -242,10 +208,9 @@ public class MenuItemManagementSteps {
         WebElement nameCell = shortWait().until(ExpectedConditions.presenceOfElementLocated(menuItemNameCell()));
         WebElement editLink = nameCell.findElement(
                 By.xpath("following-sibling::td//a[contains(@href, 'upsert')]"));
-        scrollToCenterAndClick(editLink);
+        WebElement nameInput = clickThenAwait(editLink, By.id("MenuItem_Name"));
 
         menuItemName = "Updated Menu Item " + UUID.randomUUID();
-        WebElement nameInput = shortWait().until(ExpectedConditions.presenceOfElementLocated(By.id("MenuItem_Name")));
         nameInput.clear();
         nameInput.sendKeys(menuItemName);
         submit();

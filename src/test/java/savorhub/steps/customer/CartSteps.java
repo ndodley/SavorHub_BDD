@@ -1,23 +1,18 @@
-package savorhub.steps;
+package savorhub.steps.customer;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,31 +66,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup changes, re-check the real DOM in DevTools rather
  * than trusting this comment.
  */
-public class CartSteps {
+public class CartSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
 
     private String selectedItemName;
     private double selectedItemPrice;
-
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = CartSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
 
     private static double parsePrice(String text) {
         String numeric = text.replaceAll("[^0-9.]", "");
@@ -118,7 +94,7 @@ public class CartSteps {
 
     @Given("my cart is empty")
     public void my_cart_is_empty() {
-        driver.get(BASE_URL + "/Customer/Cart");
+        navigateTo(BASE_URL + "/Customer/Cart");
         for (int i = 0; i < 25; i++) {
             List<WebElement> removeButtons = driver.findElements(By.cssSelector("button[formaction*='handler=remove']"));
             if (removeButtons.isEmpty()) {
@@ -140,17 +116,25 @@ public class CartSteps {
         selectedItemName = firstItem.findElement(By.className("card-title")).getText();
         selectedItemPrice = parsePrice(firstItem.findElement(By.className("app-price")).getText());
 
-        firstItem.click();
-
-        WebElement addToCartButton = wait.until(
-                ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(normalize-space(.), 'Add to Cart')]")));
-        addToCartButton.click();
+        // firstItem is a real <a> (hover-card), so clicking it is a full-page
+        // navigation to the item's Details page - exposed to the same
+        // ChromeDriver/DevTools navigation flake that clickThenAwait already
+        // guards against on the Admin side, just with a bigger blast radius
+        // here since every scenario in this suite that adds to cart goes
+        // through this exact line.
+        WebElement addToCartButton = clickThenAwait(firstItem,
+                By.xpath("//button[contains(normalize-space(.), 'Add to Cart')]"));
+        // Plain click() here throws ElementClickInterceptedException - something
+        // on the Details page (fixed navbar / a toastr, same class of thing
+        // scrollToCenterAndClick exists for) transiently overlaps this button's
+        // click point. Scrolling to center + a JS click sidesteps that check.
+        scrollToCenterAndClick(addToCartButton);
         wait.until(ExpectedConditions.stalenessOf(addToCartButton));
     }
 
     @When("I go to the Cart page")
     public void i_go_to_the_cart_page() {
-        driver.get(BASE_URL + "/Customer/Cart");
+        navigateTo(BASE_URL + "/Customer/Cart");
     }
 
     @Then("I should see that item in my cart")

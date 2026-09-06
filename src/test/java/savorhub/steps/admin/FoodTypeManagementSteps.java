@@ -1,21 +1,15 @@
-package savorhub.steps;
+package savorhub.steps.admin;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Properties;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,30 +54,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup or code changes, re-check the real DOM/source
  * rather than trusting this comment.
  */
-public class FoodTypeManagementSteps {
+public class FoodTypeManagementSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
 
     private String foodTypeName;
-
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = FoodTypeManagementSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
 
     private WebDriverWait shortWait() {
         return new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -104,23 +79,14 @@ public class FoodTypeManagementSteps {
         driver.findElement(By.cssSelector(".admin-card button[type='submit']")).click();
     }
 
-    // Same reasoning and pattern as CategoryManagementSteps.scrollToCenterAndClick():
-    // a scroll-then-JS-click sidesteps ElementClickInterceptedException from the
-    // toastr notification _Layout.cshtml shows after a create/edit/delete redirect.
-    private void scrollToCenterAndClick(WebElement element) {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", element);
-        js.executeScript("arguments[0].click();", element);
-    }
-
     @Given("I am on the Admin Food Types page")
     public void i_am_on_the_admin_food_types_page() {
-        driver.get(BASE_URL + "/Admin/FoodTypes");
+        navigateTo(BASE_URL + "/Admin/FoodTypes");
     }
 
     @When("I visit the Admin Food Types page directly")
     public void i_visit_the_admin_food_types_page_directly() {
-        driver.get(BASE_URL + "/Admin/FoodTypes");
+        navigateTo(BASE_URL + "/Admin/FoodTypes");
     }
 
     // Registered as a single @When and reused verbatim as a Given in the
@@ -130,7 +96,7 @@ public class FoodTypeManagementSteps {
     @When("I create a new food type with a unique name")
     public void i_create_a_new_food_type_with_a_unique_name() {
         foodTypeName = "Test Food Type " + UUID.randomUUID();
-        driver.get(BASE_URL + "/Admin/FoodTypes/Create");
+        navigateTo(BASE_URL + "/Admin/FoodTypes/Create");
         fillAndSubmitFoodTypeForm(foodTypeName);
     }
 
@@ -146,7 +112,7 @@ public class FoodTypeManagementSteps {
 
     @When("I try to create a food type with a blank name")
     public void i_try_to_create_a_food_type_with_a_blank_name() {
-        driver.get(BASE_URL + "/Admin/FoodTypes/Create");
+        navigateTo(BASE_URL + "/Admin/FoodTypes/Create");
         fillAndSubmitFoodTypeForm("");
     }
 
@@ -162,7 +128,7 @@ public class FoodTypeManagementSteps {
         WebElement nameCell = shortWait().until(ExpectedConditions.presenceOfElementLocated(foodTypeNameCell()));
         WebElement editLink = nameCell.findElement(
                 By.xpath("following-sibling::td//a[contains(@href, 'Edit')]"));
-        scrollToCenterAndClick(editLink);
+        clickThenAwait(editLink, By.id("FoodType_Name"));
 
         foodTypeName = "Updated Food Type " + UUID.randomUUID();
         fillAndSubmitFoodTypeForm(foodTypeName);
@@ -178,13 +144,11 @@ public class FoodTypeManagementSteps {
         WebElement nameCell = shortWait().until(ExpectedConditions.presenceOfElementLocated(foodTypeNameCell()));
         WebElement deleteLink = nameCell.findElement(
                 By.xpath("following-sibling::td//a[contains(@href, 'Delete')]"));
-        scrollToCenterAndClick(deleteLink);
 
         // Same .admin-card scoping as fillAndSubmitFoodTypeForm() above, and for the
         // same reason - Pages/Admin/FoodTypes/Delete.cshtml's own Delete button would
         // otherwise lose to the hidden Logout button rendered earlier in the header.
-        WebElement deleteButton = shortWait().until(ExpectedConditions.elementToBeClickable(
-                By.cssSelector(".admin-card button[type='submit']")));
+        WebElement deleteButton = clickThenAwait(deleteLink, By.cssSelector(".admin-card button[type='submit']"));
         deleteButton.click();
     }
 

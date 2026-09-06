@@ -1,21 +1,16 @@
-package savorhub.steps;
+package savorhub.steps.customer;
 
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -52,30 +47,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup changes, re-check the real DOM in DevTools rather
  * than trusting this comment.
  */
-public class FavoriteSteps {
+public class FavoriteSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
 
     private String favoritedItemName;
-
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = FavoriteSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
 
     private WebElement cardWrapperFor(WebElement cardOrTitle) {
         return cardOrTitle.findElement(By.xpath("./ancestor::div[contains(@class, 'position-relative')][1]"));
@@ -101,7 +77,7 @@ public class FavoriteSteps {
 
     @When("I go to the Favorites page")
     public void i_go_to_the_favorites_page() {
-        driver.get(BASE_URL + "/Customer/Favorites");
+        navigateTo(BASE_URL + "/Customer/Favorites");
     }
 
     @Then("I should see that item on the Favorites page")
