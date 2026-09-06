@@ -1,21 +1,16 @@
-package savorhub.steps;
+package savorhub.steps.customer;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Properties;
 
 /**
  * Step definitions for homepage_navigation.feature.
@@ -44,28 +39,9 @@ import java.util.Properties;
  * If SavorHub's markup changes, re-check the real DOM in DevTools rather
  * than trusting this comment.
  */
-public class HomepageSteps {
+public class HomepageSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
-
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = HomepageSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
 
     private WebDriverWait shortWait() {
         return new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -73,7 +49,7 @@ public class HomepageSteps {
 
     @Given("I am on the SavorHub homepage")
     public void i_am_on_the_homepage() {
-        driver.get(BASE_URL + "/");
+        navigateTo(BASE_URL + "/");
     }
 
     @Then("I should see the hero section with an Explore Menu button")

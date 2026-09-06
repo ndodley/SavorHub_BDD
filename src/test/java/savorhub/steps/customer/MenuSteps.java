@@ -1,21 +1,16 @@
-package savorhub.steps;
+package savorhub.steps.customer;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,34 +32,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup changes, re-check the real DOM in DevTools rather
  * than trusting this comment.
  */
-public class MenuSteps {
+public class MenuSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
 
     private String selectedItemName;
 
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = MenuSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
-
     @Given("I am on the SavorHub menu page")
     public void i_am_on_the_menu_page() {
-        driver.get(BASE_URL + "/Customer/Menu");
+        navigateTo(BASE_URL + "/Customer/Menu");
     }
 
     @Then("I should see at least one menu item")

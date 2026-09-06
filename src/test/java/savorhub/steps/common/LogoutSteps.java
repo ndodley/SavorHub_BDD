@@ -1,14 +1,13 @@
-package savorhub.steps;
+package savorhub.steps.common;
 
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
 import java.time.Duration;
 
@@ -39,9 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup changes, re-check the real DOM in DevTools rather
  * than trusting this comment.
  */
-public class LogoutSteps {
-
-    private final WebDriver driver = Hooks.driver;
+public class LogoutSteps extends BaseSteps {
 
     @When("I log out")
     public void i_log_out() {

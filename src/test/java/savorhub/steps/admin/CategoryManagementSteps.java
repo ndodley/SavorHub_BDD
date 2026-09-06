@@ -1,21 +1,15 @@
-package savorhub.steps;
+package savorhub.steps.admin;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import savorhub.hooks.Hooks;
+import savorhub.steps.BaseSteps;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Properties;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -61,31 +55,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * If SavorHub's markup or code changes, re-check the real DOM/source
  * rather than trusting this comment.
  */
-public class CategoryManagementSteps {
+public class CategoryManagementSteps extends BaseSteps {
 
-    private final WebDriver driver = Hooks.driver;
-
-    private static final Properties CONFIG = loadConfig();
     private static final String BASE_URL = CONFIG.getProperty("base.url");
 
     private String categoryName;
     private String categoryDisplayOrder;
-
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream in = CategoryManagementSteps.class.getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException(
-                        "Missing src/test/resources/config.properties. Copy "
-                        + "config.properties.example to config.properties in that "
-                        + "same folder and fill in your local test account details.");
-            }
-            props.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load config.properties", e);
-        }
-        return props;
-    }
 
     private WebDriverWait shortWait() {
         return new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -113,27 +88,14 @@ public class CategoryManagementSteps {
         driver.findElement(By.cssSelector(".admin-card button[type='submit']")).click();
     }
 
-    // The Categories table accumulates rows across test runs (see the class javadoc),
-    // so an Edit/Delete link can sit far down a long page, and a native Selenium click
-    // there is prone to ElementClickInterceptedException from whatever is transiently
-    // on top at that point (e.g. a toast notification after the create/edit redirect).
-    // Scroll-then-JS-click sidesteps the browser's own occlusion check entirely - the
-    // same pattern already used throughout this suite for exactly this flakiness (see
-    // CartSteps, HomepageSteps, LogoutSteps, OrderHistorySteps, RegisterSteps, ReviewSteps).
-    private void scrollToCenterAndClick(WebElement element) {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", element);
-        js.executeScript("arguments[0].click();", element);
-    }
-
     @Given("I am on the Admin Categories page")
     public void i_am_on_the_admin_categories_page() {
-        driver.get(BASE_URL + "/Admin/Categories");
+        navigateTo(BASE_URL + "/Admin/Categories");
     }
 
     @When("I visit the Admin Categories page directly")
     public void i_visit_the_admin_categories_page_directly() {
-        driver.get(BASE_URL + "/Admin/Categories");
+        navigateTo(BASE_URL + "/Admin/Categories");
     }
 
     // Registered as a single @When and reused verbatim as a Given in the
@@ -144,7 +106,7 @@ public class CategoryManagementSteps {
     public void i_create_a_new_category_with_a_unique_name_and_a_display_order() {
         categoryName = "Test Category " + UUID.randomUUID();
         categoryDisplayOrder = "50";
-        driver.get(BASE_URL + "/Admin/Categories/Create");
+        navigateTo(BASE_URL + "/Admin/Categories/Create");
         fillAndSubmitCategoryForm(categoryName, categoryDisplayOrder);
     }
 
@@ -162,7 +124,7 @@ public class CategoryManagementSteps {
 
     @When("I try to create a category whose name is the same as its display order")
     public void i_try_to_create_a_category_whose_name_is_the_same_as_its_display_order() {
-        driver.get(BASE_URL + "/Admin/Categories/Create");
+        navigateTo(BASE_URL + "/Admin/Categories/Create");
         fillAndSubmitCategoryForm("77", "77");
     }
 
@@ -178,7 +140,7 @@ public class CategoryManagementSteps {
         WebElement nameCell = shortWait().until(ExpectedConditions.presenceOfElementLocated(categoryNameCell()));
         WebElement editLink = nameCell.findElement(
                 By.xpath("following-sibling::td//a[contains(@href, 'Edit')]"));
-        scrollToCenterAndClick(editLink);
+        clickThenAwait(editLink, By.id("Category_Name"));
 
         categoryName = "Updated Category " + UUID.randomUUID();
         categoryDisplayOrder = "60";
@@ -195,13 +157,11 @@ public class CategoryManagementSteps {
         WebElement nameCell = shortWait().until(ExpectedConditions.presenceOfElementLocated(categoryNameCell()));
         WebElement deleteLink = nameCell.findElement(
                 By.xpath("following-sibling::td//a[contains(@href, 'Delete')]"));
-        scrollToCenterAndClick(deleteLink);
 
         // Same .admin-card scoping as fillAndSubmitCategoryForm() above, and for the
         // same reason - Pages/Admin/Categories/Delete.cshtml's own Delete button would
         // otherwise lose to the hidden Logout button rendered earlier in the header.
-        WebElement deleteButton = shortWait().until(ExpectedConditions.elementToBeClickable(
-                By.cssSelector(".admin-card button[type='submit']")));
+        WebElement deleteButton = clickThenAwait(deleteLink, By.cssSelector(".admin-card button[type='submit']"));
         deleteButton.click();
     }
 
